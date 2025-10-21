@@ -1,4 +1,5 @@
 import sys
+import os
 from io import StringIO
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -7,6 +8,12 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QTextCharFormat, QSyntaxHighlighter, QColor, QShortcut, QKeySequence, QIcon, QPixmap, QPainter
+
+# Windows注册表操作
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 
 class PythonSyntaxHighlighter(QSyntaxHighlighter):
@@ -245,7 +252,25 @@ class SidePython(QMainWindow):
         # 添加第一个输入框
         self.add_input_field()
 
-        # 2. 代码编辑区域
+        # 2. 创建可拖动调整大小的Splitter
+        splitter = QSplitter(Qt.Vertical)
+        splitter.setHandleWidth(6)
+        splitter.setStyleSheet("""
+            QSplitter::handle {
+                background-color: #3c3c3c;
+                margin: 2px 0px;
+            }
+            QSplitter::handle:hover {
+                background-color: #007acc;
+            }
+        """)
+
+        # 代码编辑区域容器
+        code_container = QWidget()
+        code_layout = QVBoxLayout(code_container)
+        code_layout.setContentsMargins(0, 0, 0, 0)
+        code_layout.setSpacing(5)
+
         code_label = QLabel("💻 Python 代码：")
         code_label.setStyleSheet("""
             font-weight: bold; 
@@ -253,7 +278,7 @@ class SidePython(QMainWindow):
             color: #569cd6;
             margin-bottom: 5px;
         """)
-        main_layout.addWidget(code_label)
+        code_layout.addWidget(code_label)
 
         self.code_editor = QPlainTextEdit()
         self.code_editor.setPlaceholderText("在此编写 Python 代码...")
@@ -281,7 +306,7 @@ class SidePython(QMainWindow):
         # 添加语法高亮
         self.highlighter = PythonSyntaxHighlighter(self.code_editor.document())
         
-        main_layout.addWidget(self.code_editor, stretch=2)
+        code_layout.addWidget(self.code_editor)
 
         # 3. 按钮区域
         button_layout = QHBoxLayout()
@@ -358,9 +383,16 @@ class SidePython(QMainWindow):
         button_layout.addWidget(self.topmost_button)
 
         button_layout.addStretch()
-        main_layout.addLayout(button_layout)
+        code_layout.addLayout(button_layout)
+        
+        splitter.addWidget(code_container)
 
-        # 4. 输出区域
+        # 4. 输出区域容器
+        output_container = QWidget()
+        output_layout = QVBoxLayout(output_container)
+        output_layout.setContentsMargins(0, 0, 0, 0)
+        output_layout.setSpacing(5)
+
         output_label = QLabel("📤 输出结果：")
         output_label.setStyleSheet("""
             font-weight: bold; 
@@ -368,7 +400,7 @@ class SidePython(QMainWindow):
             color: #569cd6;
             margin-bottom: 5px;
         """)
-        main_layout.addWidget(output_label)
+        output_layout.addWidget(output_label)
 
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
@@ -384,7 +416,15 @@ class SidePython(QMainWindow):
                 line-height: 1.4;
             }
         """)
-        main_layout.addWidget(self.output_text, stretch=1)
+        output_layout.addWidget(self.output_text)
+        
+        splitter.addWidget(output_container)
+        
+        # 设置初始比例 (代码区:输出区 = 2:1)
+        splitter.setSizes([400, 200])
+        
+        # 将splitter添加到主布局
+        main_layout.addWidget(splitter)
 
         # 设置初始代码示例
         self.set_example_code()
@@ -642,6 +682,101 @@ for i in range(3):
         painter.end()
         return QIcon(pixmap)
 
+    def is_autostart_enabled(self):
+        """检查是否已启用开机启动"""
+        if not winreg:
+            return False
+        
+        try:
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Run",
+                0,
+                winreg.KEY_READ
+            )
+            try:
+                winreg.QueryValueEx(key, "SidePython")
+                winreg.CloseKey(key)
+                return True
+            except FileNotFoundError:
+                winreg.CloseKey(key)
+                return False
+        except Exception:
+            return False
+
+    def set_autostart(self, enable):
+        """设置开机启动"""
+        if not winreg:
+            self.tray_icon.showMessage(
+                "SidePython",
+                "当前系统不支持自动启动功能",
+                QSystemTrayIcon.Warning,
+                2000
+            )
+            return
+        
+        try:
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Run",
+                0,
+                winreg.KEY_SET_VALUE | winreg.KEY_READ
+            )
+            
+            if enable:
+                # 获取当前程序的完整路径
+                app_path = os.path.abspath(sys.argv[0])
+                # 如果是.py文件，使用pythonw.exe运行（避免显示命令行窗口）
+                if app_path.endswith('.py'):
+                    python_path = sys.executable.replace('python.exe', 'pythonw.exe')
+                    if not os.path.exists(python_path):
+                        python_path = sys.executable
+                    value = f'"{python_path}" "{app_path}"'
+                else:
+                    value = f'"{app_path}"'
+                
+                winreg.SetValueEx(key, "SidePython", 0, winreg.REG_SZ, value)
+                winreg.CloseKey(key)
+                self.tray_icon.showMessage(
+                    "SidePython",
+                    "已启用开机启动",
+                    QSystemTrayIcon.Information,
+                    2000
+                )
+            else:
+                try:
+                    winreg.DeleteValue(key, "SidePython")
+                    winreg.CloseKey(key)
+                    self.tray_icon.showMessage(
+                        "SidePython",
+                        "已禁用开机启动",
+                        QSystemTrayIcon.Information,
+                        2000
+                    )
+                except FileNotFoundError:
+                    winreg.CloseKey(key)
+        except Exception as e:
+            self.tray_icon.showMessage(
+                "SidePython",
+                f"设置开机启动失败：{str(e)}",
+                QSystemTrayIcon.Critical,
+                2000
+            )
+
+    def toggle_autostart(self):
+        """切换开机启动状态"""
+        current_state = self.is_autostart_enabled()
+        self.set_autostart(not current_state)
+        # 更新菜单项文本
+        self.update_autostart_action()
+
+    def update_autostart_action(self):
+        """更新开机启动菜单项文本"""
+        if self.is_autostart_enabled():
+            self.autostart_action.setText("✓ 开机启动")
+        else:
+            self.autostart_action.setText("开机启动")
+
     def create_tray_icon(self):
         """创建系统托盘图标"""
         self.tray_icon = QSystemTrayIcon(self)
@@ -664,6 +799,13 @@ for i in range(3):
         
         clear_action = tray_menu.addAction("🗑 清空输出")
         clear_action.triggered.connect(self.clear_output)
+        
+        tray_menu.addSeparator()
+        
+        # 开机启动选项
+        self.autostart_action = tray_menu.addAction("开机启动")
+        self.autostart_action.triggered.connect(self.toggle_autostart)
+        self.update_autostart_action()  # 初始化菜单项文本
         
         tray_menu.addSeparator()
         
