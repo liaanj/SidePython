@@ -193,10 +193,7 @@ class SidePython(QMainWindow):
 
         main_layout.addLayout(self.input_layout)
 
-        # 添加弹性空间（在输入框和按钮之间）
-        self.input_layout.addStretch()
-
-        # 先添加按钮（这样 add_input_field 可以引用它们）
+        # 先创建按钮（但不添加到布局）
         self.add_btn = QPushButton("+")
         self.add_btn.setFixedSize(28, 28)
         self.add_btn.setStyleSheet("""
@@ -242,6 +239,9 @@ class SidePython(QMainWindow):
         self.input_layout.addWidget(self.remove_btn)
         self.remove_btn.setVisible(False)  # 初始隐藏
 
+        # 添加弹性空间，让输入框和按钮靠左
+        self.input_layout.addStretch()
+
         # 添加第一个输入框
         self.add_input_field()
 
@@ -286,6 +286,7 @@ class SidePython(QMainWindow):
         # 3. 按钮区域
         button_layout = QHBoxLayout()
         button_layout.setSpacing(8)
+        button_layout.addStretch()  # 左侧弹性空间，让按钮居中
 
         self.run_button = QPushButton("▶ 执行")
         self.run_button.setStyleSheet("""
