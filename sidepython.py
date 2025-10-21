@@ -297,7 +297,7 @@ class SidePython(QMainWindow):
                 font-size: 10pt;
                 font-weight: bold;
                 border-radius: 4px;
-                min-width: 80px;
+                min-width: 60px;
             }
             QPushButton:hover {
                 background-color: #218838;
@@ -320,7 +320,7 @@ class SidePython(QMainWindow):
                 font-size: 10pt;
                 font-weight: bold;
                 border-radius: 4px;
-                min-width: 80px;
+                min-width: 60px;
             }
             QPushButton:hover {
                 background-color: #c82333;
@@ -343,7 +343,7 @@ class SidePython(QMainWindow):
                 font-size: 10pt;
                 font-weight: bold;
                 border-radius: 4px;
-                min-width: 80px;
+                min-width: 60px;
             }
             QPushButton:hover {
                 background-color: #0056b3;
