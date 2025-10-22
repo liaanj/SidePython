@@ -15,6 +15,19 @@ try:
 except ImportError:
     winreg = None
 
+# Windows全局热键支持
+try:
+    import ctypes
+    from ctypes import wintypes
+    
+    # Windows API 常量
+    MOD_ALT = 0x0001
+    WM_HOTKEY = 0x0312
+    user32 = ctypes.windll.user32
+    HOTKEY_AVAILABLE = True
+except Exception:
+    HOTKEY_AVAILABLE = False
+
 
 class PythonSyntaxHighlighter(QSyntaxHighlighter):
     """Python语法高亮器"""
@@ -104,6 +117,8 @@ class SidePython(QMainWindow):
         self.is_topmost = False  # 置顶状态
         self.input_widgets = []  # 存储输入框
         self.var_names = []  # 存储变量名
+        self.hotkey_id = 1  # 全局热键ID
+        self.hotkey_registered = False  # 热键注册状态
         self.init_ui()
         self.create_tray_icon()
 
@@ -786,12 +801,12 @@ for i in range(3):
         """创建系统托盘图标"""
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self.create_icon())
-        self.tray_icon.setToolTip("SidePython - Python 快速执行器")
+        self.tray_icon.setToolTip("SidePython - Python 快速执行器\n快捷键: Alt+P 显示/隐藏")
         
         # 创建托盘菜单
         tray_menu = QMenu()
         
-        show_action = tray_menu.addAction("显示窗口")
+        show_action = tray_menu.addAction("显示窗口 (Alt+P)")
         show_action.triggered.connect(self.show_window)
         
         hide_action = tray_menu.addAction("隐藏窗口")
@@ -815,7 +830,7 @@ for i in range(3):
         tray_menu.addSeparator()
         
         quit_action = tray_menu.addAction("退出")
-        quit_action.triggered.connect(QApplication.instance().quit)
+        quit_action.triggered.connect(self.quit_application)
         
         self.tray_icon.setContextMenu(tray_menu)
         
@@ -838,7 +853,65 @@ for i in range(3):
         self.show()
         self.activateWindow()
         self.raise_()
+    
+    def quit_application(self):
+        """退出应用程序"""
+        self.unregister_global_hotkey()
+        QApplication.instance().quit()
 
+    def showEvent(self, event):
+        """窗口显示事件"""
+        super().showEvent(event)
+        # 在窗口第一次显示时注册热键
+        if not self.hotkey_registered and HOTKEY_AVAILABLE:
+            QTimer.singleShot(500, self.register_global_hotkey)
+    
+    def nativeEvent(self, eventType, message):
+        """处理Windows原生事件"""
+        if HOTKEY_AVAILABLE and (eventType == "windows_generic_MSG" or eventType == "windows_dispatcher_MSG"):
+            try:
+                msg = ctypes.wintypes.MSG.from_address(int(message))
+                if msg.message == WM_HOTKEY and msg.wParam == self.hotkey_id:
+                    self.toggle_visibility()
+                    return True, 0
+            except Exception:
+                pass
+        return super().nativeEvent(eventType, message)
+    
+    def register_global_hotkey(self):
+        """注册全局热键 Alt+P"""
+        if self.hotkey_registered or not HOTKEY_AVAILABLE:
+            return
+        try:
+            # 获取窗口句柄
+            hwnd = int(self.winId())
+            # 注册热键 Alt+P (P 的虚拟键码是 0x50)
+            result = user32.RegisterHotKey(hwnd, self.hotkey_id, MOD_ALT, 0x50)
+            if result:
+                self.hotkey_registered = True
+            else:
+                print("无法注册全局热键 Alt+P，可能已被其他程序占用")
+        except Exception as e:
+            print(f"注册全局热键失败: {e}")
+    
+    def unregister_global_hotkey(self):
+        """取消注册全局热键"""
+        if not self.hotkey_registered or not HOTKEY_AVAILABLE:
+            return
+        try:
+            hwnd = int(self.winId())
+            user32.UnregisterHotKey(hwnd, self.hotkey_id)
+            self.hotkey_registered = False
+        except Exception as e:
+            print(f"取消注册全局热键失败: {e}")
+    
+    def toggle_visibility(self):
+        """切换窗口显示/隐藏"""
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show_window()
+    
     def closeEvent(self, event):
         """窗口关闭事件 - 最小化到托盘而不是退出"""
         event.ignore()
@@ -849,6 +922,8 @@ for i in range(3):
             QSystemTrayIcon.Information,
             2000
         )
+    
+
 
 
 def main():
