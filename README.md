@@ -1,9 +1,10 @@
 # SidePython
 
 一个轻量的 Python 代码快速执行器（Windows，基于 PySide6）。支持输入参数、代码编辑/语法高亮、输出显示、系统托盘、全局热键与开机启动。
-https://github.com/liaanj/SidePython/blob/main/Snipaste_2025-10-22_12-15-03.png
+## 预览
+<img src="assets/screenshot.jpg" alt="SidePython 界面预览" width="600">
 ## 直接使用
-运行SidePython.exe
+运行 `SidePython.exe`
 ## 安装
 
 ```bash
