@@ -26,12 +26,12 @@ try:
 
     painter.end()
 
-    # 保存为PNG
-    success = pixmap.save("sidepython_icon.png", "PNG")
-    if success:
-        print("图标已保存为 sidepython_icon.png")
-    else:
-        print("保存图标失败")
+    # # 保存为ICO
+    # success = pixmap.save("sidepython_icon.ico", "ICO")
+    # if success:
+    #     print("图标已保存为 sidepython_icon.ico")
+    # else:
+    #     print("保存图标失败")
         
 except Exception as e:
     print(f"错误: {e}")
