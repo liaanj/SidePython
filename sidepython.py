@@ -549,7 +549,7 @@ class SidePython(QMainWindow):
         """设置示例代码"""
         example_code = """# 变量会自动创建为 float 类型
 # 支持数学运算
-result = x * 2 + y
+result = x * 2
 print(f"计算结果: {result}")
 
 # 支持条件判断
