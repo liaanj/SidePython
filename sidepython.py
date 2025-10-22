@@ -111,8 +111,9 @@ class SidePython(QMainWindow):
         """初始化用户界面"""
         self.setWindowTitle("SidePython - Python 快速执行器")
         self.setWindowIcon(self.create_icon())
-        self.setGeometry(100, 100, 380, 400)
-        self.setMinimumWidth(320)
+        self.setGeometry(100, 100, 280, 400)
+        # self.setMinimumWidth(250)
+        self.setMinimumHeight(300)
         
         # 设置VSCode风格的样式
         self.setStyleSheet("""
@@ -267,6 +268,7 @@ class SidePython(QMainWindow):
 
         # 代码编辑区域容器
         code_container = QWidget()
+        code_container.setMinimumHeight(30)  # 设置容器最小高度
         code_layout = QVBoxLayout(code_container)
         code_layout.setContentsMargins(0, 0, 0, 0)
         code_layout.setSpacing(5)
@@ -283,6 +285,7 @@ class SidePython(QMainWindow):
         self.code_editor = QPlainTextEdit()
         self.code_editor.setPlaceholderText("在此编写 Python 代码...")
         self.code_editor.setFont(QFont("Consolas", 10))
+        self.code_editor.setMinimumHeight(20)  # 设置最小高度
         
         # 设置VSCode风格的代码编辑器样式
         self.code_editor.setStyleSheet("""
@@ -323,7 +326,7 @@ class SidePython(QMainWindow):
                 font-size: 10pt;
                 font-weight: bold;
                 border-radius: 4px;
-                min-width: 60px;
+                min-width: 45px;
             }
             QPushButton:hover {
                 background-color: #218838;
@@ -346,7 +349,7 @@ class SidePython(QMainWindow):
                 font-size: 10pt;
                 font-weight: bold;
                 border-radius: 4px;
-                min-width: 60px;
+                min-width: 45px;
             }
             QPushButton:hover {
                 background-color: #c82333;
@@ -369,7 +372,7 @@ class SidePython(QMainWindow):
                 font-size: 10pt;
                 font-weight: bold;
                 border-radius: 4px;
-                min-width: 60px;
+                min-width: 45px;
             }
             QPushButton:hover {
                 background-color: #0056b3;
@@ -389,6 +392,7 @@ class SidePython(QMainWindow):
 
         # 4. 输出区域容器
         output_container = QWidget()
+        output_container.setMinimumHeight(30)  # 设置容器最小高度
         output_layout = QVBoxLayout(output_container)
         output_layout.setContentsMargins(0, 0, 0, 0)
         output_layout.setSpacing(5)
@@ -405,6 +409,7 @@ class SidePython(QMainWindow):
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
         self.output_text.setFont(QFont("Consolas", 10))
+        self.output_text.setMinimumHeight(20)  # 设置最小高度
         self.output_text.setStyleSheet("""
             QTextEdit {
                 background-color: #1e1e1e;
@@ -420,8 +425,8 @@ class SidePython(QMainWindow):
         
         splitter.addWidget(output_container)
         
-        # 设置初始比例 (代码区:输出区 = 2:1)
-        splitter.setSizes([400, 200])
+        # 设置初始比例 (代码区:输出区 = 7:3)
+        splitter.setSizes([700, 300])
         
         # 将splitter添加到主布局
         main_layout.addWidget(splitter)
@@ -613,7 +618,7 @@ for i in range(3):
 
         if self.is_topmost:
             self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-            self.topmost_button.setText("📌 取消置顶")
+            self.topmost_button.setText("取消置顶")
             self.topmost_button.setStyleSheet("""
                 QPushButton {
                     background-color: #ff6b35;
@@ -623,7 +628,7 @@ for i in range(3):
                     font-size: 10pt;
                     font-weight: bold;
                     border-radius: 4px;
-                    min-width: 80px;
+                    min-width: 45px;
                 }
                 QPushButton:hover {
                     background-color: #ff5722;
@@ -645,7 +650,7 @@ for i in range(3):
                     font-size: 10pt;
                     font-weight: bold;
                     border-radius: 4px;
-                    min-width: 80px;
+                    min-width: 45px;
                 }
                 QPushButton:hover {
                     background-color: #0056b3;
